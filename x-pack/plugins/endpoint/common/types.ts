@@ -23,18 +23,54 @@ export type ImmutableSet<T> = ReadonlySet<Immutable<T>>;
 export type ImmutableObject<T> = { readonly [K in keyof T]: Immutable<T[K]> };
 
 export class EndpointAppConstants {
+  static ALERT_INDEX_NAME = 'my-index';
   static ENDPOINT_INDEX_NAME = 'endpoint-agent*';
 }
 
-export interface EndpointResultList {
-  // the endpoint restricted by the page size
-  endpoints: EndpointMetadata[];
-  // the total number of unique endpoints in the index
+export interface AlertResultList {
+  /* the alerts restricted by the page size */
+  alerts: AlertData[];
+  /* the total number of unique alerts in the index */
   total: number;
-  // the page size requested
+  /* the page size requested */
   request_page_size: number;
-  // the index requested
+  /* the page index requested */
   request_page_index: number;
+}
+
+export interface EndpointResultList {
+  /* the endpoints restricted by the page size */
+  endpoints: EndpointMetadata[];
+  /* the total number of unique endpoints in the index */
+  total: number;
+  /* the page size requested */
+  request_page_size: number;
+  /* the page index requested */
+  request_page_index: number;
+}
+
+export interface AlertData {
+  '@timestamp': Date;
+  agent: {
+    id: string;
+    version: string;
+  };
+  event: {
+    action: string;
+  };
+  file_classification: {
+    malware_classification: {
+      score: number;
+    };
+  };
+  host: {
+    hostname: string;
+    ip: string;
+    os: {
+      name: string;
+    };
+  };
+  thread: {};
 }
 
 export interface EndpointMetadata {
@@ -59,35 +95,6 @@ export interface EndpointMetadata {
       name: string;
       full: string;
       version: string;
-    };
-  };
-}
-
-export interface AlertData {
-  value: {
-    source: {
-      endgame: {
-        data: {
-          file_operation: string;
-          malware_classification: {
-            score: number;
-          };
-        };
-        metadata: {
-          key: string;
-        };
-        timestamp_utc: Date;
-      };
-      labels: {
-        endpoint_id: string;
-      };
-      host: {
-        hostname: string;
-        ip: string;
-        os: {
-          name: string;
-        };
-      };
     };
   };
 }

@@ -5,12 +5,15 @@
  */
 
 import { Reducer } from 'redux';
-import { AlertListState } from '../../types';
+import { AlertListState } from './types';
 import { AppAction } from '../action';
 
 const initialState = (): AlertListState => {
   return {
     alerts: [],
+    request_page_size: 10,
+    request_index: 0,
+    total: 0,
   };
 };
 
@@ -21,7 +24,7 @@ export const alertListReducer: Reducer<AlertListState, AppAction> = (
   if (action.type === 'serverReturnedAlertsData') {
     return {
       ...state,
-      alerts: action.payload,
+      ...action.payload,
     };
   }
 
