@@ -23,6 +23,7 @@ import { SearchResponse } from 'elasticsearch';
 import { registerAlertRoutes } from './alerts';
 import { EndpointConfigSchema } from '../config';
 import * as data from '../test_data/all_alerts_data.json';
+import * as dataLegacy from '../test_data/all_alerts_data_legacy.json';
 
 describe('test alerts route', () => {
   let routerMock: jest.Mocked<IRouter>;
@@ -46,7 +47,39 @@ describe('test alerts route', () => {
     });
   });
 
-  it('test find the latest of all alerts', async () => {
+  it('should correctly calculate legacy alert total', async () => {
+    const mockRequest = httpServerMock.createKibanaRequest({});
+
+    const response: SearchResponse<AlertData> = (dataLegacy as unknown) as SearchResponse<
+      AlertData
+    >;
+    mockScopedClient.callAsCurrentUser.mockImplementationOnce(() => Promise.resolve(response));
+    [routeConfig, routeHandler] = routerMock.post.mock.calls.find(([{ path }]) =>
+      path.startsWith('/api/endpoint/alerts')
+    )!;
+
+    await routeHandler(
+      ({
+        core: {
+          elasticsearch: {
+            dataClient: mockScopedClient,
+          },
+        },
+      } as unknown) as RequestHandlerContext,
+      mockRequest,
+      mockResponse
+    );
+
+    expect(mockScopedClient.callAsCurrentUser).toBeCalled();
+    expect(routeConfig.options).toEqual({ authRequired: true });
+    expect(mockResponse.ok).toBeCalled();
+    const alertResultList = mockResponse.ok.mock.calls[0][0]?.body as AlertResultList;
+    expect(alertResultList.total).toEqual(132);
+    expect(alertResultList.request_page_index).toEqual(0);
+    expect(alertResultList.request_page_size).toEqual(10);
+  });
+
+  it('should return the latest of all alerts', async () => {
     const mockRequest = httpServerMock.createKibanaRequest({});
 
     const response: SearchResponse<AlertData> = (data as unknown) as SearchResponse<AlertData>;
@@ -76,7 +109,7 @@ describe('test alerts route', () => {
     expect(alertResultList.request_page_size).toEqual(10);
   });
 
-  it('test find the latest of all alerts with pagination params', async () => {
+  it('should return alert results according to pagination params', async () => {
     const mockRequest = httpServerMock.createKibanaRequest({
       body: {
         paging_properties: [

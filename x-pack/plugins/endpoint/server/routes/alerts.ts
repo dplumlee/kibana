@@ -66,6 +66,7 @@ function mapToAlertResultList(
   let totalIsLowerBound: boolean = false;
 
   // HACK: because of mismatch in elasticsearch type versions
+  // https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#hits-total-now-object-search-response
   if (typeof searchResponse?.hits?.total === 'object') {
     const total: Total = searchResponse?.hits?.total as Total;
     totalNumberOfAlerts = total?.value || 0;
