@@ -5,6 +5,7 @@
  */
 
 import { IRouter } from 'kibana/server';
+import { RequestHandler } from 'kibana/server';
 import { SearchResponse } from 'elasticsearch';
 import { schema } from '@kbn/config-schema';
 
@@ -12,10 +13,34 @@ import { kibanaRequestToAlertListQuery } from '../services/endpoint/alert_query_
 import { AlertData, AlertResultList } from '../../common/types';
 import { EndpointAppContext } from '../types';
 
+const ALERTS_ROUTE = '/api/endpoint/alerts';
+
 export function registerAlertRoutes(router: IRouter, endpointAppContext: EndpointAppContext) {
+  const alertsHandler: RequestHandler<any, any, any> = async (ctx, req, res) => {
+    try {
+      const queryParams = await kibanaRequestToAlertListQuery(req, endpointAppContext);
+      const response = (await ctx.core.elasticsearch.dataClient.callAsCurrentUser(
+        'search',
+        queryParams
+      )) as SearchResponse<AlertData>;
+      return res.ok({ body: mapToAlertResultList(queryParams, response) });
+    } catch (err) {
+      return res.internalError({ body: err });
+    }
+  };
+
+  router.get(
+    {
+      path: ALERTS_ROUTE,
+      validate: {},
+      options: { authRequired: true },
+    },
+    alertsHandler
+  );
+
   router.post(
     {
-      path: '/api/endpoint/alerts',
+      path: ALERTS_ROUTE,
       validate: {
         body: schema.nullable(
           schema.object({
@@ -38,18 +63,7 @@ export function registerAlertRoutes(router: IRouter, endpointAppContext: Endpoin
       },
       options: { authRequired: true },
     },
-    async (context, req, res) => {
-      try {
-        const queryParams = await kibanaRequestToAlertListQuery(req, endpointAppContext);
-        const response = (await context.core.elasticsearch.dataClient.callAsCurrentUser(
-          'search',
-          queryParams
-        )) as SearchResponse<AlertData>;
-        return res.ok({ body: mapToAlertResultList(queryParams, response) });
-      } catch (err) {
-        return res.internalError({ body: err });
-      }
-    }
+    alertsHandler
   );
 }
 

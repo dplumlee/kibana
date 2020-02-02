@@ -109,8 +109,9 @@ describe('test alerts route', () => {
     expect(alertResultList.request_page_size).toEqual(10);
   });
 
-  it('should return alert results according to pagination params', async () => {
+  it('should return alert results according to pagination params -- POST', async () => {
     const mockRequest = httpServerMock.createKibanaRequest({
+      method: 'post',
       body: {
         paging_properties: [
           {
@@ -126,6 +127,43 @@ describe('test alerts route', () => {
       Promise.resolve((data as unknown) as SearchResponse<AlertData>)
     );
     [routeConfig, routeHandler] = routerMock.post.mock.calls.find(([{ path }]) =>
+      path.startsWith('/api/endpoint/alerts')
+    )!;
+
+    await routeHandler(
+      ({
+        core: {
+          elasticsearch: {
+            dataClient: mockScopedClient,
+          },
+        },
+      } as unknown) as RequestHandlerContext,
+      mockRequest,
+      mockResponse
+    );
+
+    expect(mockScopedClient.callAsCurrentUser).toBeCalled();
+    expect(routeConfig.options).toEqual({ authRequired: true });
+    expect(mockResponse.ok).toBeCalled();
+    const alertResultList = mockResponse.ok.mock.calls[0][0]?.body as AlertResultList;
+    expect(alertResultList.alerts.length).toEqual(20);
+    expect(alertResultList.total).toEqual(132);
+    expect(alertResultList.request_page_index).toEqual(40);
+    expect(alertResultList.request_page_size).toEqual(20);
+  });
+
+  it('should return alert results according to pagination params -- GET', async () => {
+    const mockRequest = httpServerMock.createKibanaRequest({
+      path: '/api/endpoint/alerts?page_size=20&page_index=2',
+      query: {
+        page_size: 20,
+        page_index: 2,
+      },
+    });
+    mockScopedClient.callAsCurrentUser.mockImplementationOnce(() =>
+      Promise.resolve((data as unknown) as SearchResponse<AlertData>)
+    );
+    [routeConfig, routeHandler] = routerMock.get.mock.calls.find(([{ path }]) =>
       path.startsWith('/api/endpoint/alerts')
     )!;
 
