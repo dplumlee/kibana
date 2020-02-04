@@ -5,7 +5,7 @@
  */
 import { httpServerMock, loggingServiceMock } from '../../../../../../src/core/server/mocks';
 import { EndpointConfigSchema } from '../../config';
-import { kibanaRequestToAlertListQuery } from './alert_query_builders';
+import { getPagingProperties, kibanaRequestToAlertListQuery } from './alert_query_builders';
 
 describe('test query builder', () => {
   describe('test query builder request processing', () => {
@@ -13,10 +13,13 @@ describe('test query builder', () => {
       const mockRequest = httpServerMock.createKibanaRequest({
         body: {},
       });
-      const query = await kibanaRequestToAlertListQuery(mockRequest, {
+      const mockCtx = {
         logFactory: loggingServiceMock.create(),
         config: () => Promise.resolve(EndpointConfigSchema.validate({})),
-      });
+      };
+      const queryParams = await getPagingProperties(mockRequest, mockCtx);
+      const query = await kibanaRequestToAlertListQuery(queryParams, mockCtx);
+
       expect(query).toEqual({
         body: {
           query: {

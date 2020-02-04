@@ -9,7 +9,11 @@ import { RequestHandler } from 'kibana/server';
 import { SearchResponse } from 'elasticsearch';
 import { schema } from '@kbn/config-schema';
 
-import { kibanaRequestToAlertListQuery } from '../services/endpoint/alert_query_builders';
+import {
+  getPagingProperties,
+  kibanaRequestToAlertListQuery,
+} from '../services/endpoint/alert_query_builders';
+
 import { AlertData, AlertResultList } from '../../common/types';
 import { EndpointAppContext } from '../types';
 
@@ -18,10 +22,11 @@ const ALERTS_ROUTE = '/api/endpoint/alerts';
 export function registerAlertRoutes(router: IRouter, endpointAppContext: EndpointAppContext) {
   const alertsHandler: RequestHandler<unknown, unknown, unknown> = async (ctx, req, res) => {
     try {
-      const queryParams = await kibanaRequestToAlertListQuery(req, endpointAppContext);
+      const queryParams = await getPagingProperties(req, endpointAppContext);
+      const reqBody = await kibanaRequestToAlertListQuery(queryParams, endpointAppContext);
       const response = (await ctx.core.elasticsearch.dataClient.callAsCurrentUser(
         'search',
-        queryParams
+        reqBody
       )) as SearchResponse<AlertData>;
       return res.ok({ body: mapToAlertResultList(endpointAppContext, queryParams, response) });
     } catch (err) {
@@ -84,12 +89,13 @@ function mapToAlertResultList(
     // This shouldn't happen, as we always try to fetch enough hits to satisfy the current request and the next page.
     endpointAppContext.logFactory
       .get('endpoint')
-      .warn('WARNING: Total hits not counted accurately. Pagination numbers may be inaccurate.');
+      .warn('Total hits not counted accurately. Pagination numbers may be inaccurate.');
   }
 
   return {
-    request_page_size: queryParams.size,
-    request_page_index: queryParams.from,
+    request_page_size: queryParams.pageSize,
+    request_page_index: queryParams.pageIndex,
+    result_from_index: queryParams.fromIndex,
     alerts: searchResponse?.hits?.hits?.map(entry => entry._source),
     total: totalNumberOfAlerts,
   };

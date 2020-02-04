@@ -76,6 +76,7 @@ describe('test alerts route', () => {
     const alertResultList = mockResponse.ok.mock.calls[0][0]?.body as AlertResultList;
     expect(alertResultList.total).toEqual(132);
     expect(alertResultList.request_page_index).toEqual(0);
+    expect(alertResultList.result_from_index).toEqual(0);
     expect(alertResultList.request_page_size).toEqual(10);
   });
 
@@ -106,6 +107,7 @@ describe('test alerts route', () => {
     const alertResultList = mockResponse.ok.mock.calls[0][0]?.body as AlertResultList;
     expect(alertResultList.total).toEqual(132);
     expect(alertResultList.request_page_index).toEqual(0);
+    expect(alertResultList.result_from_index).toEqual(0);
     expect(alertResultList.request_page_size).toEqual(10);
   });
 
@@ -142,7 +144,8 @@ describe('test alerts route', () => {
     const alertResultList = mockResponse.ok.mock.calls[0][0]?.body as AlertResultList;
     expect(alertResultList.alerts.length).toEqual(20);
     expect(alertResultList.total).toEqual(132);
-    expect(alertResultList.request_page_index).toEqual(40);
+    expect(alertResultList.request_page_index).toEqual(2);
+    expect(alertResultList.result_from_index).toEqual(40);
     expect(alertResultList.request_page_size).toEqual(20);
   });
 
@@ -179,7 +182,8 @@ describe('test alerts route', () => {
     const alertResultList = mockResponse.ok.mock.calls[0][0]?.body as AlertResultList;
     expect(alertResultList.alerts.length).toEqual(20);
     expect(alertResultList.total).toEqual(132);
-    expect(alertResultList.request_page_index).toEqual(40);
+    expect(alertResultList.request_page_index).toEqual(2);
+    expect(alertResultList.result_from_index).toEqual(40);
     expect(alertResultList.request_page_size).toEqual(20);
   });
   // TODO: add tests for track_total_hits

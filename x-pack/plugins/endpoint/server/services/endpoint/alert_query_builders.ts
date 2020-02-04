@@ -8,16 +8,16 @@ import { EndpointAppConstants } from '../../../common/types';
 import { EndpointAppContext } from '../../types';
 
 export const kibanaRequestToAlertListQuery = async (
-  request: KibanaRequest<any, any, any>,
+  pagingProperties: Record<string, any>,
   endpointAppContext: EndpointAppContext
 ): Promise<Record<string, any>> => {
-  const pagingProperties = await getPagingProperties(request, endpointAppContext);
-
-  // Calculate minimum total hits set to indicate there's a next page
   const DEFAULT_TOTAL_HITS = 10000;
 
-  const fromIdx = pagingProperties.pageIndex * pagingProperties.pageSize;
-  const totalHitsMin = Math.max(fromIdx + pagingProperties.pageSize * 2, DEFAULT_TOTAL_HITS);
+  // Calculate minimum total hits set to indicate there's a next page
+  const totalHitsMin = Math.max(
+    pagingProperties.fromIndex + pagingProperties.pageSize * 2,
+    DEFAULT_TOTAL_HITS
+  );
 
   return {
     body: {
@@ -33,16 +33,16 @@ export const kibanaRequestToAlertListQuery = async (
         },
       ],
     },
-    from: fromIdx,
+    from: pagingProperties.fromIndex,
     size: pagingProperties.pageSize,
     index: EndpointAppConstants.ALERT_INDEX_NAME,
   };
 };
 
-async function getPagingProperties(
+export const getPagingProperties = async (
   request: KibanaRequest<any, any, any>,
   endpointAppContext: EndpointAppContext
-) {
+): Promise<Record<string, any>> => {
   const config = await endpointAppContext.config();
   const pagingProperties: { page_size?: number; page_index?: number } = {};
 
@@ -54,8 +54,11 @@ async function getPagingProperties(
     pagingProperties.page_size = request.body?.page_size;
   }
 
-  return {
+  const finalParams = {
     pageSize: pagingProperties.page_size || config.alertResultListDefaultPageSize,
     pageIndex: pagingProperties.page_index || config.alertResultListDefaultFirstPageIndex,
   };
-}
+
+  finalParams.fromIndex = finalParams.pageIndex * finalParams.pageSize;
+  return finalParams;
+};
