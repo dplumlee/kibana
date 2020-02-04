@@ -3,7 +3,6 @@
  * or more contributor license agreements. Licensed under the Elastic License;
  * you may not use this file except in compliance with the Elastic License.
  */
-import qs from 'querystring';
 import { KibanaRequest } from 'kibana/server';
 import { EndpointAppConstants } from '../../../common/types';
 import { EndpointAppContext } from '../../types';
@@ -13,8 +12,16 @@ export const kibanaRequestToAlertListQuery = async (
   endpointAppContext: EndpointAppContext
 ): Promise<Record<string, any>> => {
   const pagingProperties = await getPagingProperties(request, endpointAppContext);
+
+  // Calculate minimum total hits set to indicate there's a next page
+  const DEFAULT_TOTAL_HITS = 10000;
+
+  const fromIdx = pagingProperties.pageIndex * pagingProperties.pageSize;
+  const totalHitsMin = Math.max(fromIdx + pagingProperties.pageSize * 2, DEFAULT_TOTAL_HITS);
+
   return {
     body: {
+      track_total_hits: totalHitsMin,
       query: {
         match_all: {},
       },
@@ -26,7 +33,7 @@ export const kibanaRequestToAlertListQuery = async (
         },
       ],
     },
-    from: pagingProperties.pageIndex * pagingProperties.pageSize,
+    from: fromIdx,
     size: pagingProperties.pageSize,
     index: EndpointAppConstants.ALERT_INDEX_NAME,
   };
@@ -37,25 +44,14 @@ async function getPagingProperties(
   endpointAppContext: EndpointAppContext
 ) {
   const config = await endpointAppContext.config();
-  let pagingProperties: { page_size?: number; page_index?: number } = {};
+  const pagingProperties: { page_size?: number; page_index?: number } = {};
 
   if (request?.route?.method === 'get') {
-    if (typeof request?.url?.query === 'string') {
-      const qp = qs.parse(request.url.query);
-      pagingProperties.page_size = Number(qp.page_size);
-      pagingProperties.page_index = Number(qp.page_index);
-    } else if (request?.url?.query) {
-      pagingProperties = request.url.query;
-    }
+    pagingProperties.page_index = request.query?.page_index;
+    pagingProperties.page_size = request.query?.page_size;
   } else {
-    if (request?.body?.paging_properties) {
-      for (const property of request.body.paging_properties) {
-        Object.assign(
-          pagingProperties,
-          ...Object.keys(property).map(key => ({ [key]: property[key] }))
-        );
-      }
-    }
+    pagingProperties.page_index = request.body?.page_index;
+    pagingProperties.page_size = request.body?.page_size;
   }
 
   return {

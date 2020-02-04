@@ -29,11 +29,13 @@ describe('test query builder', () => {
               },
             },
           ],
+          track_total_hits: 10000,
         },
         from: 0,
         size: 10,
         index: 'my-index',
       } as Record<string, any>);
     });
+    // TODO: add tests for calculating track_total_hits
   });
 });

@@ -6,7 +6,6 @@
 
 import { AlertData } from '../../../../../common/types';
 
-// FIXME: temporary until server defined `interface` is moved to a module we can reference
 export interface AlertListData {
   alerts: AlertData[];
   request_page_size: number;

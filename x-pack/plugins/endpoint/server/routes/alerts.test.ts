@@ -113,14 +113,8 @@ describe('test alerts route', () => {
     const mockRequest = httpServerMock.createKibanaRequest({
       method: 'post',
       body: {
-        paging_properties: [
-          {
-            page_size: 20,
-          },
-          {
-            page_index: 2,
-          },
-        ],
+        page_size: 20,
+        page_index: 2,
       },
     });
     mockScopedClient.callAsCurrentUser.mockImplementationOnce(() =>
@@ -188,4 +182,5 @@ describe('test alerts route', () => {
     expect(alertResultList.request_page_index).toEqual(40);
     expect(alertResultList.request_page_size).toEqual(20);
   });
+  // TODO: add tests for track_total_hits
 });

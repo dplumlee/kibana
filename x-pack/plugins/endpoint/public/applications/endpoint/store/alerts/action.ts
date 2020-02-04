@@ -4,10 +4,8 @@
  * you may not use this file except in compliance with the Elastic License.
  */
 
-// import { Immutable } from '../../../../../common/types';
 import { AlertListData } from './types';
 
-// type ServerReturnedAlertsData = Immutable<{
 interface ServerReturnedAlertsData {
   type: 'serverReturnedAlertsData';
   payload: AlertListData;

@@ -8,6 +8,7 @@ import { memo, useState, useMemo } from 'react';
 import React from 'react';
 import { EuiDataGrid } from '@elastic/eui';
 import { useSelector } from 'react-redux';
+import { i18n } from '@kbn/i18n';
 import * as selectors from '../../store/selectors';
 import { usePageId } from '../use_page_id';
 
@@ -40,7 +41,12 @@ export const AlertIndex = memo(() => {
       const row = json[rowIndex];
 
       if (columnId === 'alert_type') {
-        return 'Malicious File';
+        return i18n.translate(
+          'xpack.endpoint.application.endpoint.alerts.alertType.maliciousFileDescription',
+          {
+            defaultMessage: 'Malicious File',
+          }
+        );
       } else if (columnId === 'event_type') {
         return row.event.action;
       } else if (columnId === 'os') {

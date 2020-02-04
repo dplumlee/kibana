@@ -16,14 +16,14 @@ import { EndpointAppContext } from '../types';
 const ALERTS_ROUTE = '/api/endpoint/alerts';
 
 export function registerAlertRoutes(router: IRouter, endpointAppContext: EndpointAppContext) {
-  const alertsHandler: RequestHandler<any, any, any> = async (ctx, req, res) => {
+  const alertsHandler: RequestHandler<unknown, unknown, unknown> = async (ctx, req, res) => {
     try {
       const queryParams = await kibanaRequestToAlertListQuery(req, endpointAppContext);
       const response = (await ctx.core.elasticsearch.dataClient.callAsCurrentUser(
         'search',
         queryParams
       )) as SearchResponse<AlertData>;
-      return res.ok({ body: mapToAlertResultList(queryParams, response) });
+      return res.ok({ body: mapToAlertResultList(endpointAppContext, queryParams, response) });
     } catch (err) {
       return res.internalError({ body: err });
     }
@@ -32,7 +32,12 @@ export function registerAlertRoutes(router: IRouter, endpointAppContext: Endpoin
   router.get(
     {
       path: ALERTS_ROUTE,
-      validate: {},
+      validate: {
+        query: schema.object({
+          page_size: schema.number({ defaultValue: 10, min: 1, max: 10000 }),
+          page_index: schema.number({ defaultValue: 0, min: 0 }),
+        }),
+      },
       options: { authRequired: true },
     },
     alertsHandler
@@ -42,24 +47,10 @@ export function registerAlertRoutes(router: IRouter, endpointAppContext: Endpoin
     {
       path: ALERTS_ROUTE,
       validate: {
-        body: schema.nullable(
-          schema.object({
-            paging_properties: schema.arrayOf(
-              // FIXME: This structure is weird, but it will change when the following bug is fixed:
-              // https://github.com/elastic/kibana/issues/54843
-              schema.oneOf([
-                // the number of results to return for this request per page
-                schema.object({
-                  page_size: schema.number({ defaultValue: 10, min: 1, max: 10000 }),
-                }),
-                // the index of the page to return
-                schema.object({
-                  page_index: schema.number({ defaultValue: 0, min: 0 }),
-                }),
-              ])
-            ),
-          })
-        ),
+        body: schema.object({
+          page_size: schema.number({ defaultValue: 10, min: 1, max: 10000 }),
+          page_index: schema.number({ defaultValue: 0, min: 0 }),
+        }),
       },
       options: { authRequired: true },
     },
@@ -68,6 +59,7 @@ export function registerAlertRoutes(router: IRouter, endpointAppContext: Endpoin
 }
 
 function mapToAlertResultList(
+  endpointAppContext: EndpointAppContext,
   queryParams: Record<string, any>,
   searchResponse: SearchResponse<AlertData>
 ): AlertResultList {
@@ -79,8 +71,7 @@ function mapToAlertResultList(
   let totalNumberOfAlerts: number = 0;
   let totalIsLowerBound: boolean = false;
 
-  // HACK: because of mismatch in elasticsearch type versions
-  // https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#hits-total-now-object-search-response
+  // We handle 2 separate schemas for the response below, due to: https://github.com/elastic/kibana/issues/56694
   if (typeof searchResponse?.hits?.total === 'object') {
     const total: Total = searchResponse?.hits?.total as Total;
     totalNumberOfAlerts = total?.value || 0;
@@ -90,22 +81,16 @@ function mapToAlertResultList(
   }
 
   if (totalIsLowerBound) {
-    // TODO: handle this
+    // This shouldn't happen, as we always try to fetch enough hits to satisfy the current request and the next page.
+    endpointAppContext.logFactory
+      .get('endpoint')
+      .warn('WARNING: Total hits not counted accurately. Pagination numbers may be inaccurate.');
   }
 
-  if (searchResponse.hits.hits.length > 0) {
-    return {
-      request_page_size: queryParams.size,
-      request_page_index: queryParams.from,
-      alerts: searchResponse.hits.hits.map(entry => entry._source),
-      total: totalNumberOfAlerts,
-    };
-  } else {
-    return {
-      request_page_size: queryParams.size,
-      request_page_index: queryParams.from,
-      total: totalNumberOfAlerts,
-      alerts: [],
-    };
-  }
+  return {
+    request_page_size: queryParams.size,
+    request_page_index: queryParams.from,
+    alerts: searchResponse?.hits?.hits?.map(entry => entry._source),
+    total: totalNumberOfAlerts,
+  };
 }
