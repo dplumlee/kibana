@@ -34,9 +34,7 @@ describe('test alerts route', () => {
   let routeConfig: RouteConfig<any, any, any, any>;
 
   beforeEach(() => {
-    mockClusterClient = elasticsearchServiceMock.createClusterClient() as jest.Mocked<
-      IClusterClient
-    >;
+    mockClusterClient = elasticsearchServiceMock.createClusterClient();
     mockScopedClient = elasticsearchServiceMock.createScopedClusterClient();
     mockClusterClient.asScoped.mockReturnValue(mockScopedClient);
     routerMock = httpServiceMock.createRouter();
@@ -151,7 +149,7 @@ describe('test alerts route', () => {
 
   it('should return alert results according to pagination params -- GET', async () => {
     const mockRequest = httpServerMock.createKibanaRequest({
-      path: '/api/endpoint/alerts?page_size=20&page_index=2',
+      path: '/api/endpoint/alerts',
       query: {
         page_size: 20,
         page_index: 2,
