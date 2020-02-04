@@ -28,14 +28,30 @@ export class EndpointAppConstants {
 }
 
 export interface AlertResultList {
-  /* the alerts restricted by the page size */
+  /**
+   * The alerts restricted by page size.
+   */
   alerts: AlertData[];
-  /* the total number of unique alerts in the index */
+
+  /**
+   * The total number of alerts on the page.
+   */
   total: number;
-  /* the page size requested */
+
+  /**
+   * The size of the requested page.
+   */
   request_page_size: number;
-  /* the page index requested */
+
+  /**
+   * The index of the requested page, starting at 0.
+   */
   request_page_index: number;
+
+  /**
+   * The offset of the requested page, starting at 0.
+   */
+  result_from_index: number;
 }
 
 export interface EndpointResultList {

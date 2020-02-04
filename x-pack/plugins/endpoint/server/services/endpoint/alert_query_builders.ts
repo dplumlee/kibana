@@ -54,11 +54,9 @@ export const getPagingProperties = async (
     pagingProperties.page_size = request.body?.page_size;
   }
 
-  const finalParams = {
-    pageSize: pagingProperties.page_size || config.alertResultListDefaultPageSize,
-    pageIndex: pagingProperties.page_index || config.alertResultListDefaultFirstPageIndex,
-  };
+  const pageSize = pagingProperties.page_size || config.alertResultListDefaultPageSize;
+  const pageIndex = pagingProperties.page_index || config.alertResultListDefaultFirstPageIndex;
+  const fromIndex = pageIndex * pageSize;
 
-  finalParams.fromIndex = finalParams.pageIndex * finalParams.pageSize;
-  return finalParams;
+  return { pageSize, pageIndex, fromIndex };
 };

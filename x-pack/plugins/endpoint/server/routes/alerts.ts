@@ -7,7 +7,7 @@
 import { IRouter } from 'kibana/server';
 import { RequestHandler } from 'kibana/server';
 import { SearchResponse } from 'elasticsearch';
-import { schema } from '@kbn/config-schema';
+import { schema, TypeOf } from '@kbn/config-schema';
 
 import {
   getPagingProperties,
@@ -19,8 +19,17 @@ import { EndpointAppContext } from '../types';
 
 const ALERTS_ROUTE = '/api/endpoint/alerts';
 
+const reqSchema = schema.object({
+  page_size: schema.number({ defaultValue: 10, min: 1, max: 10000 }),
+  page_index: schema.number({ defaultValue: 0, min: 0 }),
+});
+
 export function registerAlertRoutes(router: IRouter, endpointAppContext: EndpointAppContext) {
-  const alertsHandler: RequestHandler<unknown, unknown, unknown> = async (ctx, req, res) => {
+  const alertsHandler: RequestHandler<unknown, TypeOf<typeof reqSchema>> = async (
+    ctx,
+    req,
+    res
+  ) => {
     try {
       const queryParams = await getPagingProperties(req, endpointAppContext);
       const reqBody = await kibanaRequestToAlertListQuery(queryParams, endpointAppContext);
@@ -38,10 +47,7 @@ export function registerAlertRoutes(router: IRouter, endpointAppContext: Endpoin
     {
       path: ALERTS_ROUTE,
       validate: {
-        query: schema.object({
-          page_size: schema.number({ defaultValue: 10, min: 1, max: 10000 }),
-          page_index: schema.number({ defaultValue: 0, min: 0 }),
-        }),
+        query: reqSchema,
       },
       options: { authRequired: true },
     },
@@ -52,10 +58,7 @@ export function registerAlertRoutes(router: IRouter, endpointAppContext: Endpoin
     {
       path: ALERTS_ROUTE,
       validate: {
-        body: schema.object({
-          page_size: schema.number({ defaultValue: 10, min: 1, max: 10000 }),
-          page_index: schema.number({ defaultValue: 0, min: 0 }),
-        }),
+        body: reqSchema,
       },
       options: { authRequired: true },
     },
