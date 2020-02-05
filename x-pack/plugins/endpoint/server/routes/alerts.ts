@@ -19,7 +19,7 @@ import { EndpointAppContext } from '../types';
 
 const ALERTS_ROUTE = '/api/endpoint/alerts';
 
-const reqSchema = schema.object({
+export const reqSchema = schema.object({
   page_size: schema.number({ defaultValue: 10, min: 1, max: 10000 }),
   page_index: schema.number({ defaultValue: 0, min: 0 }),
 });

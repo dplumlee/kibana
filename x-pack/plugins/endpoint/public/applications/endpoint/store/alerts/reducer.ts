@@ -12,7 +12,8 @@ const initialState = (): AlertListState => {
   return {
     alerts: [],
     request_page_size: 10,
-    request_index: 0,
+    request_page_index: 0,
+    result_from_index: 0,
     total: 0,
   };
 };

@@ -20,7 +20,7 @@ import {
 } from '../../../../../src/core/server/mocks';
 import { AlertData, AlertResultList } from '../../common/types';
 import { SearchResponse } from 'elasticsearch';
-import { registerAlertRoutes } from './alerts';
+import { reqSchema, registerAlertRoutes } from './alerts';
 import { EndpointConfigSchema } from '../config';
 import * as data from '../test_data/all_alerts_data.json';
 import * as dataLegacy from '../test_data/all_alerts_data_legacy.json';
@@ -72,7 +72,7 @@ describe('test alerts route', () => {
     expect(routeConfig.options).toEqual({ authRequired: true });
     expect(mockResponse.ok).toBeCalled();
     const alertResultList = mockResponse.ok.mock.calls[0][0]?.body as AlertResultList;
-    expect(alertResultList.total).toEqual(132);
+    expect(alertResultList.total).toEqual(21);
     expect(alertResultList.request_page_index).toEqual(0);
     expect(alertResultList.result_from_index).toEqual(0);
     expect(alertResultList.request_page_size).toEqual(10);
@@ -103,7 +103,7 @@ describe('test alerts route', () => {
     expect(routeConfig.options).toEqual({ authRequired: true });
     expect(mockResponse.ok).toBeCalled();
     const alertResultList = mockResponse.ok.mock.calls[0][0]?.body as AlertResultList;
-    expect(alertResultList.total).toEqual(132);
+    expect(alertResultList.total).toEqual(21);
     expect(alertResultList.request_page_index).toEqual(0);
     expect(alertResultList.result_from_index).toEqual(0);
     expect(alertResultList.request_page_size).toEqual(10);
@@ -113,13 +113,11 @@ describe('test alerts route', () => {
     const mockRequest = httpServerMock.createKibanaRequest({
       method: 'post',
       body: {
-        page_size: 20,
-        page_index: 2,
+        page_size: 6,
+        page_index: 3,
       },
     });
-    mockScopedClient.callAsCurrentUser.mockImplementationOnce(() =>
-      Promise.resolve((data as unknown) as SearchResponse<AlertData>)
-    );
+    mockScopedClient.callAsCurrentUser.mockImplementationOnce(() => Promise.resolve(data));
     [routeConfig, routeHandler] = routerMock.post.mock.calls.find(([{ path }]) =>
       path.startsWith('/api/endpoint/alerts')
     )!;
@@ -140,24 +138,21 @@ describe('test alerts route', () => {
     expect(routeConfig.options).toEqual({ authRequired: true });
     expect(mockResponse.ok).toBeCalled();
     const alertResultList = mockResponse.ok.mock.calls[0][0]?.body as AlertResultList;
-    expect(alertResultList.alerts.length).toEqual(20);
-    expect(alertResultList.total).toEqual(132);
-    expect(alertResultList.request_page_index).toEqual(2);
-    expect(alertResultList.result_from_index).toEqual(40);
-    expect(alertResultList.request_page_size).toEqual(20);
+    expect(alertResultList.total).toEqual(21);
+    expect(alertResultList.request_page_index).toEqual(3);
+    expect(alertResultList.result_from_index).toEqual(18);
+    expect(alertResultList.request_page_size).toEqual(6);
   });
 
   it('should return alert results according to pagination params -- GET', async () => {
     const mockRequest = httpServerMock.createKibanaRequest({
       path: '/api/endpoint/alerts',
       query: {
-        page_size: 20,
+        page_size: 3,
         page_index: 2,
       },
     });
-    mockScopedClient.callAsCurrentUser.mockImplementationOnce(() =>
-      Promise.resolve((data as unknown) as SearchResponse<AlertData>)
-    );
+    mockScopedClient.callAsCurrentUser.mockImplementationOnce(() => Promise.resolve(data));
     [routeConfig, routeHandler] = routerMock.get.mock.calls.find(([{ path }]) =>
       path.startsWith('/api/endpoint/alerts')
     )!;
@@ -178,11 +173,19 @@ describe('test alerts route', () => {
     expect(routeConfig.options).toEqual({ authRequired: true });
     expect(mockResponse.ok).toBeCalled();
     const alertResultList = mockResponse.ok.mock.calls[0][0]?.body as AlertResultList;
-    expect(alertResultList.alerts.length).toEqual(20);
-    expect(alertResultList.total).toEqual(132);
+    expect(alertResultList.total).toEqual(21);
     expect(alertResultList.request_page_index).toEqual(2);
-    expect(alertResultList.result_from_index).toEqual(40);
-    expect(alertResultList.request_page_size).toEqual(20);
+    expect(alertResultList.result_from_index).toEqual(6);
+    expect(alertResultList.request_page_size).toEqual(3);
   });
-  // TODO: add tests for track_total_hits
+
+  it('should correctly validate params', async () => {
+    const validate = () => {
+      reqSchema.validate({
+        page_size: 'abc',
+        page_index: 0,
+      });
+    };
+    expect(validate).toThrow();
+  });
 });
