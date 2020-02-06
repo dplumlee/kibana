@@ -7,4 +7,4 @@
 import { AlertResultList } from '../../../../../common/types';
 
 export type AlertListData = AlertResultList;
-export type AlertListState = AlertResultList;
+export type AlertListState = AlertResultList & { url: string };

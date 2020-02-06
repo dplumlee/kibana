@@ -9,20 +9,32 @@ import { CoreStart } from 'kibana/public';
 import { appSagaFactory } from './saga';
 import { appReducer } from './reducer';
 import { alertMiddlewareFactory } from './alerts/middleware';
+import { routingMiddlewareFactory } from './routing/middleware';
+import { EndpointAppHistory } from '../types';
 
 const composeWithReduxDevTools = (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
   ? (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({ name: 'EndpointApp' })
   : compose;
 
-export const appStoreFactory = (coreStart: CoreStart): [Store, () => void] => {
+export const appStoreFactory = (
+  coreStart: CoreStart,
+  history: EndpointAppHistory
+): [Store, () => void] => {
   const sagaReduxMiddleware = appSagaFactory(coreStart);
+  const routingMiddleware = routingMiddlewareFactory(coreStart, history);
   const store = createStore(
     appReducer,
     composeWithReduxDevTools(
-      applyMiddleware(alertMiddlewareFactory(coreStart), appSagaFactory(coreStart))
+      applyMiddleware(
+        routingMiddleware.middleware,
+        alertMiddlewareFactory(coreStart, history).middleware,
+        appSagaFactory(coreStart)
+      )
     )
   );
-
+  if (routingMiddleware.start !== undefined) {
+    routingMiddleware.start();
+  }
   sagaReduxMiddleware.start();
   return [store, sagaReduxMiddleware.stop];
 };
