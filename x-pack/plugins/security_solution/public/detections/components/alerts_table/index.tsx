@@ -173,6 +173,7 @@ export const AlertsTableComponent: React.FC<AlertsTableComponentProps> = ({
             title = i18n.OPENED_ALERT_SUCCESS_TOAST(updated);
             break;
           case 'acknowledged':
+          case 'in-progress':
             title = i18n.ACKNOWLEDGED_ALERT_SUCCESS_TOAST(updated);
         }
         displaySuccessToast(title, dispatchToaster);
@@ -192,6 +193,7 @@ export const AlertsTableComponent: React.FC<AlertsTableComponentProps> = ({
           title = i18n.OPENED_ALERT_FAILED_TOAST;
           break;
         case 'acknowledged':
+        case 'in-progress':
           title = i18n.ACKNOWLEDGED_ALERT_FAILED_TOAST;
       }
       displayErrorToast(title, [error.message], dispatchToaster);
